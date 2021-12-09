@@ -8,6 +8,7 @@ const app = express();
 let onlineUsers = [];
 
 app.use(cors());
+
 app.get("/online-users", (req, res) => {
   res.send({ onlineUsers });
 });
@@ -17,7 +18,6 @@ const httpServer = createServer(app);
 const io = new Server(httpServer);
 
 io.on("connection", (socket) => {
-
   socket.on("setUsername", ({ username, room }) => {
     onlineUsers.push({ username: username, socketId: socket.id, room: room });
 
@@ -28,18 +28,18 @@ io.on("connection", (socket) => {
     socket.to(room).emit("newConnection");
   });
 
+  socket.on("connectToPrivateChat", ({ room }) => {
+
+    socket.join(room);
+
+    /* socket.in([recipientSocketId, socket.id]).socketsJoin(room); */
+  });
+
   socket.on("sendmessage", ({ message, room }) => {
-    console.log("non è privato");
     socket.to(room).emit("message", message);
   });
 
-  socket.on("sendPrivateMessage", ({ message, room }) => {
-    socket.join(room);
-    socket.to(room).emit("privateMessage", message);
-  });
-
   socket.on("disconnect", () => {
-    console.log(`${socket.id} disconnected`);
     onlineUsers = onlineUsers.filter((user) => user.socketId !== socket.id);
   });
 });
